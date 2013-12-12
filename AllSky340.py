@@ -247,11 +247,14 @@ class AllSky340:
                 #self.command('S', 0)
                 return False
 
-    def getImage(self, exptime, light=False, cropped=False):
+    def getImage(self, exptime, light=False, cropped=False, autodark=False):
         eres = 1.0e-4
         e = "%06x" % int(exptime / eres)
         if light:
-            e = e + "00" + "01"
+            if autodark:
+                e = e + "00" + "02"
+            else:
+                e = e + "00" + "01"
         else:
             e = e + "00" + "00"
 
@@ -276,7 +279,8 @@ class AllSky340:
         s = ""
         while out != "D":
             out = self.ser.read(1)
-
+	
+        dwnld_start=time.time()
         cam_log.info("Transferring image from camera....")
         self.command('X', 0)
         imag_str = bytearray()
@@ -313,6 +317,8 @@ class AllSky340:
         earr = [z for z in imag_str[::2]]
         oarr = [z for z in imag_str[1::2]]
         arr = []
+	
+        cam_log.info('Took %.3f ms' % ((time.time()-dwnld_start)*1000))
 
         for i in range(len(earr)):
             s = struct.pack("BB", earr[i], oarr[i])
